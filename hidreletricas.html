@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hidrelétricas</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', system-ui, sans-serif; }
+
+    body {
+      background-image: linear-gradient(rgba(10, 25, 47, 0.7), rgba(10, 25, 47, 0.9)), url('fundo.jpg');
+      background-size: cover;
+      background-position: center;
+      background-attachment: fixed;
+      background-repeat: no-repeat;
+      color: white;
+      overflow: hidden; 
+    }
+
+    #barra-progresso {
+      position: fixed; top: 0; left: 0; height: 4px; background: #00d2ff; width: 0%; z-index: 100;
+      transition: width 0.3s ease;
+    }
+
+    /* Navegação Lateral com 7 Bolinhas */
+    .nav-pontos {
+      position: fixed; right: 20px; top: 50%; transform: translateY(-50%); z-index: 100;
+      display: flex; flex-direction: column; gap: 15px;
+    }
+    .ponto {
+      width: 12px; height: 12px; border-radius: 50%; border: 2px solid rgba(255,255,255,0.5);
+      background: transparent; transition: all 0.3s;
+    }
+    .ponto.ativo { background: #00d2ff; border-color: #00d2ff; transform: scale(1.3); box-shadow: 0 0 10px #00d2ff; }
+
+
+    .marca-dagua {
+      position: fixed;
+      bottom: 20px;
+      left: 20px;
+      color: rgba(255, 255, 255, 0.3); 
+      font-weight: 300;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      z-index: 99;
+      pointer-events: none;
+    }
+
+    .slides-container {
+      height: 100vh; overflow-y: scroll; scroll-snap-type: y mandatory; scroll-behavior: smooth;
+      scrollbar-width: none; 
+    }
+    .slides-container::-webkit-scrollbar { display: none; }
+
+    .slide {
+      height: 100vh; width: 100vw; scroll-snap-align: center; display: flex; flex-direction: column;
+      justify-content: center; align-items: center; padding: 15px; position: relative;
+    }
+
+    .vidro {
+      background: rgba(10, 10, 10, 0.3); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+      border-radius: 20px; padding: 50px; text-align: center; max-width: 900px; width: 100%;
+    }
+
+    h1 { font-size: 4rem; color: #ffffff; margin-bottom: 10px; letter-spacing: -1px; }
+    h2 { font-size: 2.8rem; color: #00d2ff; margin-bottom: 20px; }
+    p { font-size: 1.3rem; color: #d1d5db; line-height: 1.6; }
+    .destaque { color: #00d2ff; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; margin-top: 30px; }
+    
+    .cartao {
+      background: rgba(255, 255, 255, 0.05); padding: 30px 20px; border-radius: 15px;
+      border: 1px solid rgba(255, 255, 255, 0.1); transition: all 0.3s;
+      cursor: pointer;
+    }
+    .cartao:hover { transform: translateY(-10px); background: rgba(255, 255, 255, 0.1); border-color: #00d2ff; }
+    
+    .cartao.pro h3 { color: #4ade80; margin: 15px 0 10px; }
+    .cartao.contra h3 { color: #f87171; margin: 15px 0 10px; }
+    .icone { font-size: 3.5rem; display: block; }
+
+    .animar { opacity: 0; transform: translateY(40px); transition: all 0.8s ease-out; }
+    .animar.visivel { opacity: 1; transform: translateY(0); }
+    .delay-1 { transition-delay: 0.2s; }
+    .delay-2 { transition-delay: 0.4s; }
+    .delay-3 { transition-delay: 0.6s; }
+
+    /* ESTILOS DO POP-UP (MODAL) */
+    .modal-fundo {
+      position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+      background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(8px);
+      display: flex; justify-content: center; align-items: center;
+      z-index: 1000; opacity: 0; pointer-events: none; transition: opacity 0.3s ease;
+    }
+    .modal-fundo.ativo { opacity: 1; pointer-events: auto; }
+    .modal-caixa { position: relative; max-width: 600px; transform: scale(0.8); transition: transform 0.3s ease; }
+    .modal-fundo.ativo .modal-caixa { transform: scale(1); }
+    .fechar-btn {
+      position: absolute; top: 20px; right: 25px; background: none; border: none; color: white;
+      font-size: 2.5rem; cursor: pointer; transition: color 0.3s;
+    }
+    .fechar-btn:hover { color: #f87171; }
+    #modal-texto { margin-top: 20px; font-size: 1.2rem; text-align: left; }
+
+    /* ESTILOS PARA OS GRÁFICOS (SLIDE 5) */
+    .grafico-container { width: 100%; max-width: 600px; margin: 30px auto 0; text-align: left; }
+    .barra-fundo { 
+      background: rgba(255, 255, 255, 0.1); border-radius: 10px; height: 25px; 
+      margin-bottom: 25px; overflow: hidden; border: 1px solid rgba(255,255,255,0.2); 
+    }
+    .barra-preenchimento { 
+      background: linear-gradient(90deg, #00d2ff, #3a7bd5); height: 100%; width: 0; 
+      transition: width 1.5s cubic-bezier(0.25, 1, 0.5, 1); 
+    }
+    .barra-rotulo { display: flex; justify-content: space-between; margin-bottom: 5px; font-weight: 500; font-size: 1.1rem; }
+    
+    .visivel .preenche-64 { width: 64%; }
+    .visivel .preenche-15 { width: 15%; }
+    .visivel .preenche-8 { width: 8%; }
+
+    /* RESPONSIVIDADE PARA CELULAR */
+    @media (max-width: 768px) {
+      .vidro { padding: 30px 20px; max-height: 85vh; overflow-y: auto; scrollbar-width: none; }
+      .vidro::-webkit-scrollbar { display: none; }
+      h1 { font-size: 2.2rem; } h2 { font-size: 1.8rem; margin-bottom: 10px; } p { font-size: 1rem; line-height: 1.4; }
+      .grid { grid-template-columns: 1fr; gap: 12px; margin-top: 20px; }
+      .cartao { padding: 15px; display: flex; align-items: center; text-align: left; gap: 15px; }
+      .cartao:hover { transform: translateY(-3px); }
+      .icone { font-size: 2rem; margin-bottom: 0; }
+      .cartao h3 { margin: 0 0 5px 0; font-size: 1.1rem; }
+      .nav-pontos { right: 8px; transform: translateY(-50%) scale(0.8); }
+      .marca-dagua { font-size: 0.8rem; left: 10px; bottom: 10px; } /* Ajuste no celular */
+    }
+  </style>
+</head>
+<body>
+
+  <div id="meuModal" class="modal-fundo" onclick="fecharModal(event)">
+    <div class="vidro modal-caixa">
+      <button class="fechar-btn" onclick="fecharModal(event)">×</button>
+      <span id="modal-icone" class="icone">ℹ️</span>
+      <h2 id="modal-titulo">Título</h2>
+      <p id="modal-texto">Texto explicativo vai aqui.</p>
+    </div>
+  </div>
+
+  <div id="barra-progresso"></div>
+
+  <div class="nav-pontos">
+    <div class="ponto ativo"></div>
+    <div class="ponto"></div>
+    <div class="ponto"></div>
+    <div class="ponto"></div>
+    <div class="ponto"></div>
+    <div class="ponto"></div>
+    <div class="ponto"></div>
+  </div>
+
+  <div class="marca-dagua">Trabalho de PIT</div>
+
+  <div class="slides-container" id="apresentacao">
+    
+    <div class="slide">
+      <div class="vidro animar">
+        <span class="icone animar delay-1" style="display:block; text-align:center; margin-bottom:15px;">🌊</span>
+        <h1 class="animar delay-2">Usinas <span class="destaque">Hidrelétricas</span></h1>
+        <p class="animar delay-3" style="text-align:center;"></p>
+        
+        <div class="animar delay-3" style="margin-top: 30px; padding-top: 20px; border-top: 1px solid rgba(255,255,255,0.2);">
+          <p style="font-size: 1.1rem; color: #e2e8f0; font-weight: 300;">
+            <strong style="color: #00d2ff; font-weight: 600;">Equipe:</strong><br>
+            Leon • Sirlaine • Gabrielly • Vinicius
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="vidro">
+        <h2 class="animar">⚙️ Como funciona?</h2>
+        <p class="animar delay-1">A energia do rio transformada em luz para as cidades.</p>
+        <div class="grid">
+          <div class="cartao animar delay-1"><span class="icone">💧</span><div><h3>Represa</h3><p>Água é acumulada.</p></div></div>
+          <div class="cartao animar delay-2"><span class="icone">🌀</span><div><h3>Turbinas</h3><p>Pressão gira as hélices.</p></div></div>
+          <div class="cartao animar delay-3"><span class="icone">⚡</span><div><h3>Gerador</h3><p>O giro vira energia.</p></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="vidro">
+        <h2 class="animar">👍 Pontos Positivos</h2>
+        <p class="animar delay-1" style="font-size: 0.9rem; color: #4ade80;">(Clique nos cartões para ler mais)</p>
+        <div class="grid">
+          <div class="cartao pro animar delay-1" onclick="abrirModal('🍃', 'Energia Limpa', 'Diferente de usinas a carvão ou gás, as hidrelétricas não queimam combustíveis fósseis. Isso significa zero emissão direta de gases do efeito estufa durante a geração, ajudando a combater o aquecimento global.', '#4ade80')">
+            <span class="icone">🍃</span><div><h3>Energia Limpa</h3><p>Zero emissão de poluentes.</p></div>
+          </div>
+          <div class="cartao pro animar delay-2" onclick="abrirModal('🔄', 'Renovável', 'A fonte de energia é a água dos rios, que é naturalmente reabastecida pelo ciclo das chuvas. A água não é consumida nem poluída no processo; ela apenas passa pelas turbinas e segue seu curso.', '#4ade80')">
+            <span class="icone">🔄</span><div><h3>Renovável</h3><p>Usa a água das chuvas.</p></div>
+          </div>
+          <div class="cartao pro animar delay-3" onclick="abrirModal('🔋', 'Constante', 'Diferente da energia solar (que para à noite) e da eólica (que depende do vento), a água represada funciona como uma bateria gigante. A usina pode gerar energia sob demanda, 24 horas por dia.', '#4ade80')">
+            <span class="icone">🔋</span><div><h3>Constante</h3><p>Gera energia dia e noite.</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="vidro">
+        <h2 class="animar">👎 Pontos Negativos</h2>
+        <p class="animar delay-1" style="font-size: 0.9rem; color: #f87171;">(Clique nos cartões para ler mais)</p>
+        <div class="grid">
+          <div class="cartao contra animar delay-1" onclick="abrirModal('🏠', 'Deslocamento Social', 'A criação do lago da represa alaga cidades inteiras, fazendas e reservas. Isso força milhares de pessoas, muitas vezes comunidades ribeirinhas e indígenas, a abandonarem suas terras ancestrais e lares.', '#f87171')">
+            <span class="icone">🏠</span><div><h3>Deslocamento</h3><p>Perda de terras e casas.</p></div>
+          </div>
+          <div class="cartao contra animar delay-2" onclick="abrirModal('🐟', 'Impacto Ambiental', 'A barragem bloqueia o rio, impedindo a migração natural dos peixes (piracema). Além disso, a floresta alagada apodrece debaixo d\'água, liberando metano, um gás muito tóxico para o clima.', '#f87171')">
+            <span class="icone">🐟</span><div><h3>Eco-Impacto</h3><p>Altera rotas de peixes.</p></div>
+          </div>
+          <div class="cartao contra animar delay-3" onclick="abrirModal('☀️', 'Vulnerabilidade Climática', 'Como dependem inteiramente da chuva, períodos de seca severa esvaziam os reservatórios. Quando isso acontece, o país corre risco de apagões e a conta de luz fica muito mais cara.', '#f87171')">
+            <span class="icone">☀️</span><div><h3>Secas</h3><p>Sem chuva, sem energia.</p></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="vidro">
+        <h2 class="animar">📊 O Cenário no Brasil</h2>
+        <p class="animar delay-1">Nosso país é um dos que mais dependem da força das águas no mundo inteiro para manter a luz acesa.</p>
+        
+        <div class="grafico-container animar delay-2">
+          <div class="barra-rotulo"><span>Hidrelétricas</span><span>64%</span></div>
+          <div class="barra-fundo"><div class="barra-preenchimento preenche-64"></div></div>
+
+          <div class="barra-rotulo"><span>Eólica (Ventos)</span><span>15%</span></div>
+          <div class="barra-fundo"><div class="barra-preenchimento preenche-15"></div></div>
+
+          <div class="barra-rotulo"><span>Solar (Sol)</span><span>8%</span></div>
+          <div class="barra-fundo"><div class="barra-preenchimento preenche-8"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="vidro">
+        <h2 class="animar">📍 Curiosidade Local</h2>
+        <p class="animar delay-1">Um gigante bem perto de nós!</p>
+        
+        <div class="cartao animar delay-2" style="margin-top: 25px; cursor: default; text-align: left; display: block; background: rgba(0, 0, 0, 0.4);">
+          <h3 style="color: #00d2ff; font-size: 1.8rem; margin-bottom: 10px;">Usina de Xingó (Rio São Francisco)</h3>
+          <p style="font-size: 1.15rem; line-height: 1.6; color: #e2e8f0;">
+            Localizada na divisa entre <strong>Alagoas</strong> e Sergipe, Xingó é uma das maiores usinas do Nordeste. A construção do seu lago alagou áreas ricas em arqueologia e mudou a caatinga ribeirinha, mas em contrapartida gerou os imensos Cânions do São Francisco, que hoje movimentam o turismo na região.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="vidro">
+        <span class="icone animar delay-1" style="display:block; text-align:center; margin-bottom:15px; font-size: 4rem;">💡</span>
+        <h2 class="animar delay-2" style="font-size: 3.5rem;">O Equilíbrio é a Chave</h2>
+        <p class="animar delay-3" style="font-size: 1.5rem; margin-top: 20px;">
+          As hidrelétricas são grandes motores do desenvolvimento, mas o futuro exige inteligência e tecnologias que minimizem os danos à natureza e à sociedade.
+        </p>
+        <h3 class="destaque animar delay-3" style="margin-top: 40px; font-size: 2.2rem; text-transform: uppercase; letter-spacing: 2px;">
+          Muito Obrigado!
+        </h3>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const tela = document.getElementById('apresentacao');
+    const elementosAnimar = document.querySelectorAll('.animar');
+    const pontos = document.querySelectorAll('.ponto');
+    const barra = document.getElementById('barra-progresso');
+
+    /* Lógica do Pop-up (Modal) */
+    function abrirModal(icone, titulo, texto, cor) {
+      document.getElementById('modal-icone').innerText = icone;
+      document.getElementById('modal-titulo').innerText = titulo;
+      document.getElementById('modal-titulo').style.color = cor;
+      document.getElementById('modal-texto').innerText = texto;
+      document.getElementById('meuModal').classList.add('ativo');
+    }
+
+    function fecharModal(evento) {
+      if (evento.target.id === 'meuModal' || evento.target.classList.contains('fechar-btn')) {
+        document.getElementById('meuModal').classList.remove('ativo');
+      }
+    }
+
+    /* Navegação com o teclado */
+    document.addEventListener('keydown', (e) => {
+      if (document.getElementById('meuModal').classList.contains('ativo')) return;
+      if (e.key === 'ArrowDown' || e.key === 'PageDown') tela.scrollBy({ top: window.innerHeight, behavior: 'smooth' });
+      if (e.key === 'ArrowUp' || e.key === 'PageUp') tela.scrollBy({ top: -window.innerHeight, behavior: 'smooth' });
+    });
+
+    /* Intersecção de Elementos (Aciona animações e barras do gráfico ao entrar na tela) */
+    const observador = new IntersectionObserver((entradas) => {
+      entradas.forEach(entrada => {
+        if (entrada.isIntersecting) {
+          entrada.target.classList.add('visivel');
+        } else {
+          entrada.target.classList.remove('visivel');
+        }
+      });
+    }, { threshold: 0.1 });
+    
+    elementosAnimar.forEach(el => observador.observe(el));
+
+    /* Atualiza a Barra de Progresso e as Bolinhas Laterais */
+    tela.addEventListener('scroll', () => {
+      const rolagemMaxima = tela.scrollHeight - tela.clientHeight;
+      const percentual = (tela.scrollTop / rolagemMaxima) * 100;
+      barra.style.width = percentual + '%';
+      
+      let indiceAtual = Math.round(tela.scrollTop / window.innerHeight);
+      pontos.forEach((ponto, i) => {
+        ponto.classList.toggle('ativo', i === indiceAtual);
+      });
+    });
+  </script>
+</body>
+</html>
